@@ -11,7 +11,7 @@ const fileExtensions = {
 const dictionary = {
   outcome: 'the result or consequence of a series of actions',
   HTML: 'Hypertext Markup Language, the standard language for creating web pages',
-  CSS: 'Cascading Style Sheets, used to define the presentation of a document',
+  CSS: 'Cascading Style Sheets, used to define the styles and layout of the web page',
   JavaScript: 'a high-level programming language used for web development',
   web: 'a network of interconnected documents and resources',
   development: 'the process of creating and improving software or websites',
@@ -20,6 +20,17 @@ const dictionary = {
   combination: 'the act of joining or merging different elements',
   utilize: 'to make use of or employ something',
 };
+
+const basicPackageInstallations = [
+  'bulma',
+  'bootstrap',
+  'jquery',
+  'axios',
+  'lodash',
+  'moment',
+  'jsonwebtoken',
+  // Add more basic packages here
+];
 
 function generateBadge(license) {
   return `Licensed under ${license}`;
@@ -44,7 +55,7 @@ function generateSynopsis(fileType) {
   return fileTypeDescriptions[fileType] || '';
 }
 
-function generateDescription(title, files) {
+function generateDescription(title, fileTypes) {
   const titleWords = title.split(' ');
 
   let description = `The "${title}" project is a web development project that aims to achieve an outcome by combining the power of`;
@@ -74,121 +85,133 @@ function generateDescription(title, files) {
 }
 
 function generateUsageSynopsis(title, description, fileTypes) {
-  let usageSynopsis = `The "${title}" project offers a practical application of web development skills, showcasing the synergy of HTML, CSS, and JavaScript in building a dynamic and interactive web experience. `;
+  let usageSynopsis = `The "${title}" project offers a practical application of web development skills and techniques. It provides a combination of HTML, CSS, and JavaScript files to create a fully functional web page. `;
+  usageSynopsis += `The project's main focus is to ${description}. `;
+  usageSynopsis += `The following table provides an overview of the files included in the project:\n\n`;
+  usageSynopsis += `| File | Description |\n`;
+  usageSynopsis += `| --- | --- |\n`;
 
-  if (fileTypes.length > 0) {
-    const fileTypesList = fileTypes.map((fileType) => fileType.toLowerCase()).join(', ');
-    usageSynopsis += `The project incorporates ${fileTypesList} to enhance the user interface and deliver a visually appealing design. `;
-  }
-
-  usageSynopsis += `Users can explore the website and engage with its various features, experiencing the dynamic functionalities enabled by HTML, CSS, and JavaScript. `;
-  usageSynopsis += `Whether it's interacting with dynamic content, navigating through intuitive user interfaces, or enjoying the visual aesthetics, users can expect an immersive web experience. `;
-  usageSynopsis += `The project encourages user engagement and interactivity through its well-crafted user interface and intuitive navigation. `;
-  usageSynopsis += `With a responsive design and cross-browser compatibility, the web page adapts seamlessly to different devices and browsers, ensuring a consistent experience for all users. `;
-  usageSynopsis += `By leveraging the power of web development technologies, the "${title}" project provides a robust and interactive web experience that is both visually appealing and user-friendly. `;
+  fileTypes.forEach((fileType) => {
+    usageSynopsis += `| ${fileType} | ${generateSynopsis(fileType)} |\n`;
+  });
 
   return usageSynopsis;
 }
 
-inquirer
-  .prompt([
+function detectInstallationInstructions(fileTypes) {
+  const installationInstructions = [];
+
+  if (fileTypes.includes('HTML')) {
+    installationInstructions.push(`${generateSynopsis('HTML')} ${dictionary['HTML']}`);
+  }
+
+  if (fileTypes.includes('CSS')) {
+    installationInstructions.push(`${generateSynopsis('CSS')} ${dictionary['CSS']}`);
+  }
+
+  if (fileTypes.includes('JavaScript')) {
+    installationInstructions.push(`${generateSynopsis('JavaScript')} ${dictionary['JavaScript']}`);
+  }
+
+  // Basic package installations
+  if (fileTypes.includes('JavaScript')) {
+    const packagesList = basicPackageInstallations.map(pkg => `- Install ${pkg}: \`npm install ${pkg}\``);
+    installationInstructions.push('To use some common JavaScript libraries, you can install the following packages using npm:\n' + packagesList.join('\n'));
+  }
+
+  return installationInstructions;
+}
+
+async function promptUser() {
+  return inquirer.prompt([
     {
       type: 'input',
       name: 'title',
-      message: 'Enter the Title of your Project:',
+      message: "What's the title of your project?",
     },
-  ])
-  .then((answers) => {
-    const title = answers.title.trim();
-
-    if (!title) {
-      console.log('Please provide a valid project title.');
-      return;
-    }
-
-    const license = 'UNC Coding Boot Camp - UNC-Chapel Hill';
-    const licenseBadge = generateBadge(license);
-
-    const currentDir = process.cwd();
-
-    const files = fs.readdirSync(currentDir);
-    const fileTypes = files
-      .map((file) => {
-        const extension = path.extname(file);
-        return fileExtensions[extension];
-      })
-      .filter(Boolean);
-
-    const description = generateDescription(title, files);
-    const usageSynopsis = generateUsageSynopsis(title, description, fileTypes);
-
-    let readmeContent = `
-# ${title}
-
-## Table of Contents
-
-- [Description](#description)
-- [Usage](#usage)
-- [Credits](#credits)
-- [License](#license)
-`;
-
-    const tableOfContents = [];
-
-    if (fileTypes.includes('HTML')) {
-      tableOfContents.push('- [HTML](#html)');
-      readmeContent += `
-## HTML
-
-${generateSynopsis('HTML')}
-`;
-    }
-
-    if (fileTypes.includes('JavaScript')) {
-      tableOfContents.push('- [JavaScript](#javascript)');
-      readmeContent += `
-## JavaScript
-
-${generateSynopsis('JavaScript')}
-`;
-    }
-
-    if (fileTypes.includes('CSS')) {
-      tableOfContents.push('- [CSS](#css)');
-      readmeContent += `
-## CSS
-
-${generateSynopsis('CSS')}
-`;
-    }
-
-    // Append the updated Table of Contents
-    readmeContent = readmeContent.replace(
-      '## Table of Contents',
-      `## Table of Contents\n\n${tableOfContents.join('\n')}`
-    );
-
-    readmeContent += `
-## Description
-
-${description}
-
-## Usage
-
-${usageSynopsis}
-
-## Credits
-
-This project was developed by Marcies Smith.
-
-## License
-
-${licenseBadge}
-`;
-
-    const readmePath = path.join(currentDir, 'README.md');
-    fs.writeFile(readmePath, readmeContent, (err) => {
-      if (err) throw err;
-      console.log('README.md file created successfully.');
-    });
+    {
+      type: 'input',
+      name: 'github',
+      message: 'Enter the GitHub link for your project:',
+    },
+    {
+      type: 'input',
+      name: 'deployment',
+      message: 'Enter the deployment link for your project:',
+    },
+    {
+      type: 'input',
+      name: 'video',
+      message: 'Enter the video link for your project:',
+    },
+  ]).then((answers) => {
+    answers.fileTypes = ['HTML', 'CSS', 'JavaScript'];
+    answers.license = 'UNC Coding Boot Camp - UNC-Chapel Hill';
+    return answers;
   });
+}
+
+async function generateReadme() {
+  const { title, fileTypes, license, github, deployment, video } = await promptUser();
+  const description = generateDescription(title, fileTypes);
+
+  let readmeContent = `# ${title}\n\n## Table of Contents\n`;
+
+  readmeContent += `- [Description](#description)\n`;
+  readmeContent += `- [Usage](#usage)\n`;
+  readmeContent += `- [Installation](#installation)\n`;
+  readmeContent += `- [Credits](#credits)\n`;
+  readmeContent += `- [Links](#links)\n`;
+
+  if (license !== 'None') {
+    readmeContent += `- [License](#license)\n`;
+  }
+
+  readmeContent += `\n## Description\n\n${description}\n\n`;
+
+  readmeContent += `\n## Usage\n\n${generateUsageSynopsis(title, description, fileTypes)}\n`;
+
+  readmeContent += `\n## Installation\n`;
+
+  const installationInstructions = detectInstallationInstructions(fileTypes);
+
+  if (installationInstructions.length > 0) {
+    installationInstructions.forEach((instruction, index) => {
+      readmeContent += `\n**Step ${index + 1}:**\n\n${instruction}\n`;
+    });
+  } else {
+    readmeContent += `\nNo additional installation steps are required for this project.\n`;
+  }
+
+  readmeContent += `\n## Credits\n\n`;
+
+  if (github) {
+    readmeContent += `- This project was developed by Marcies Smith.\n`;
+  }
+
+  readmeContent += `\n## Links\n\n`;
+
+  if (github) {
+    readmeContent += `- [GitHub Repository](${github})\n`;
+  }
+
+  if (deployment) {
+    readmeContent += `- [Deployed Application](${deployment})\n`;
+  }
+
+  if (video) {
+    readmeContent += `- [Demo Video](${video})\n`;
+  }
+
+  if (license !== 'None') {
+    readmeContent += `\n## License\n\n${generateBadge(license)}\n`;
+  }
+
+  const outputPath = path.join(__dirname, 'README.md');
+  fs.writeFileSync(outputPath, readmeContent);
+
+  console.log(`README.md file generated successfully at ${outputPath}`);
+}
+
+
+generateReadme();
